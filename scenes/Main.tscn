@@ -35,6 +35,10 @@ position = Vector2(620, 468)
 color = Color(0.4, 0.63, 0.3, 1)
 polygon = PackedVector2Array(-180, 20, -130, -35, -60, -60, 20, -65, 90, -45, 150, -10, 180, 20)
 
+[node name="Horizon" type="Polygon2D" parent="."]
+color = Color(0.38, 0.6, 0.26, 1)
+polygon = PackedVector2Array(-200, 468, 1250, 468, 1250, 650, -200, 650)
+
 [node name="Lava" type="Area2D" parent="."]
 position = Vector2(525, 750)
 
