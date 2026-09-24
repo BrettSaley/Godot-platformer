@@ -1,7 +1,5 @@
 extends Node2D
 
-const KILL_Y = 650.0
-
 @onready var player: CharacterBody2D = $Player
 @onready var start_position: Marker2D = $StartPosition
 @onready var message_label: Label = $UI/MessageLabel
@@ -10,11 +8,12 @@ const KILL_Y = 650.0
 
 func _ready() -> void:
 	$Star.body_entered.connect(_on_star_body_entered)
+	$Lava.body_entered.connect(_on_lava_body_entered)
 	message_timer.timeout.connect(_on_message_timer_timeout)
 
 
-func _physics_process(_delta: float) -> void:
-	if player.global_position.y > KILL_Y:
+func _on_lava_body_entered(body: Node) -> void:
+	if body == player:
 		die()
 
 

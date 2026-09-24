@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
@@ -14,6 +14,9 @@ size = Vector2(160, 24)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_star"]
 radius = 14.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lava"]
+size = Vector2(1450, 300)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -31,6 +34,20 @@ polygon = PackedVector2Array(-160, 20, -120, -55, -60, -95, 0, -105, 60, -90, 12
 position = Vector2(620, 468)
 color = Color(0.4, 0.63, 0.3, 1)
 polygon = PackedVector2Array(-180, 20, -130, -35, -60, -60, 20, -65, 90, -45, 150, -10, 180, 20)
+
+[node name="Lava" type="Area2D" parent="."]
+position = Vector2(525, 750)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Lava"]
+shape = SubResource("RectangleShape2D_lava")
+
+[node name="Base" type="Polygon2D" parent="Lava"]
+color = Color(0.55, 0.08, 0.02, 1)
+polygon = PackedVector2Array(-725, -150, 725, -150, 725, 150, -725, 150)
+
+[node name="Glow" type="Polygon2D" parent="Lava"]
+color = Color(1, 0.55, 0.1, 1)
+polygon = PackedVector2Array(-725, -150, -580, -136, -435, -150, -290, -136, -145, -150, 0, -136, 145, -150, 290, -136, 435, -150, 580, -136, 725, -150, 725, -110, -725, -110)
 
 [node name="StartPlatform" type="StaticBody2D" parent="."]
 position = Vector2(100, 500)
