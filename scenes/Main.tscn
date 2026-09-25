@@ -1,27 +1,53 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
+[ext_resource type="Script" path="res://scripts/spawner.gd" id="3_spawner"]
+[ext_resource type="Script" path="res://scripts/bullets.gd" id="4_bullets"]
+[ext_resource type="Script" path="res://scripts/ground.gd" id="5_ground"]
+[ext_resource type="Script" path="res://scripts/hearts.gd" id="6_hearts"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
 
-[node name="Level" type="Node2D" parent="."]
+[node name="Ground" type="Node2D" parent="."]
+script = ExtResource("5_ground")
+
+[node name="Spawner" type="Node" parent="."]
+script = ExtResource("3_spawner")
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(100, 440)
+position = Vector2(480, 270)
+
+[node name="Bullets" type="Node2D" parent="."]
+script = ExtResource("4_bullets")
 
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TimeBar" type="ProgressBar" parent="UI"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 12.0
+offset_right = 250.0
+offset_bottom = 30.0
+grow_horizontal = 2
+show_percentage = false
+max_value = 30.0
+value = 30.0
 
 [node name="MessageLabel" type="Label" parent="UI"]
 visible = false
 anchor_left = 0.5
 anchor_right = 0.5
+anchor_top = 0.5
+anchor_bottom = 0.5
 offset_left = -300.0
 offset_right = 300.0
-offset_top = 40.0
-offset_bottom = 90.0
+offset_top = -25.0
+offset_bottom = 25.0
 grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
@@ -33,11 +59,19 @@ text = ""
 wait_time = 1.5
 one_shot = true
 
-[node name="LevelLabel" type="Label" parent="UI"]
+[node name="Hearts" type="Control" parent="UI"]
+layout_mode = 0
 offset_left = 16.0
 offset_top = 12.0
-offset_right = 300.0
-offset_bottom = 44.0
+offset_right = 200.0
+offset_bottom = 40.0
+script = ExtResource("6_hearts")
+
+[node name="LevelLabel" type="Label" parent="UI"]
+offset_left = 16.0
+offset_top = 42.0
+offset_right = 200.0
+offset_bottom = 74.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
@@ -46,9 +80,9 @@ text = "Level 1"
 
 [node name="PowerupsLabel" type="Label" parent="UI"]
 offset_left = 16.0
-offset_top = 48.0
-offset_right = 300.0
-offset_bottom = 300.0
+offset_top = 76.0
+offset_right = 250.0
+offset_bottom = 330.0
 theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4

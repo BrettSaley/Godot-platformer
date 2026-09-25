@@ -1,62 +1,116 @@
 extends Node2D
 
-const SKY_COLOR := Color(0.55, 0.8, 0.92)
+const BOSSES := [
+	preload("res://scripts/bosses/bear.gd"),
+	preload("res://scripts/bosses/dark_barbarian.gd"),
+	preload("res://scripts/bosses/serpent.gd"),
+]
 
-@onready var level_root: Node2D = $Level
-@onready var player: CharacterBody2D = $Player
+const BACKGROUND_COLOR := Color(0.08, 0.06, 0.12)
+const LEVEL_DURATION := 15.0
+const BOSS_LEVEL_DURATION := LEVEL_DURATION * 1.5
+
+@onready var spawner: Node = $Spawner
+@onready var player: Node2D = $Player
+@onready var bullets: Node2D = $Bullets
+@onready var time_bar: ProgressBar = $UI/TimeBar
 @onready var message_label: Label = $UI/MessageLabel
 @onready var message_timer: Timer = $UI/MessageTimer
+@onready var hearts: Control = $UI/Hearts
 @onready var level_label: Label = $UI/LevelLabel
 @onready var powerups_label: Label = $UI/PowerupsLabel
 
-var start_position: Vector2
+var boss_level := GameState.is_boss_level(GameState.level)
+var boss: Boss
+var time_left := BOSS_LEVEL_DURATION if boss_level else LEVEL_DURATION
+var shield_charges := 0
 var level_over := false
 
 
 func _ready() -> void:
-	RenderingServer.set_default_clear_color(SKY_COLOR)
+	RenderingServer.set_default_clear_color(BACKGROUND_COLOR)
 	message_timer.timeout.connect(_on_message_timer_timeout)
 
-	var level := LevelGenerator.generate(level_root, GameState.level)
-	start_position = level.start
-	level.star.body_entered.connect(_on_star_body_entered)
-	level.lava.body_entered.connect(_on_lava_body_entered)
+	spawner.setup(GameState.level, bullets, player)
+	bullets.player = player
+	bullets.player_hit.connect(_on_player_hit)
+	shield_charges = GameState.stacks("shield")
 
-	respawn_player()
+	time_bar.max_value = time_left
+	time_bar.value = time_left
 	update_hud()
-	show_message("Level %d" % GameState.level)
+	show_message("BOSS FIGHT!" if boss_level else "Level %d" % GameState.level)
+	await get_tree().create_timer(1.0, false).timeout
+	spawner.start()
+	if boss_level:
+		boss = _pick_boss().new()
+		boss.setup(GameState.level, bullets, player)
+		boss.touched_player.connect(_on_player_hit)
+		add_child(boss)
+		move_child(boss, bullets.get_index())
+		show_message("%s appears!" % boss.display_name)
 
 
-func _on_lava_body_entered(body: Node) -> void:
-	if body == player and not level_over:
-		die()
+## Random boss, never the same one as last time.
+func _pick_boss() -> GDScript:
+	var options := range(BOSSES.size())
+	options.erase(GameState.last_boss)
+	GameState.last_boss = options.pick_random()
+	return BOSSES[GameState.last_boss]
 
 
-func die() -> void:
-	if GameState.stacks("extra_life") > 0:
-		GameState.consume_powerup("extra_life")
+func _physics_process(delta: float) -> void:
+	if level_over or not spawner.active:
+		return
+	time_left -= delta
+	time_bar.value = time_left
+	if time_left <= 0.0:
+		complete_level()
+
+
+func _on_player_hit() -> void:
+	if level_over:
+		return
+	if shield_charges > 0:
+		shield_charges -= 1
 		update_hud()
-		show_message("Extra Life used!")
-		respawn_player()
+		show_message("Shield blocked a hit!")
+		player.make_invulnerable(1.5)
+		return
+	GameState.health -= 1
+	update_hud()
+	if GameState.health > 0:
+		player.make_invulnerable(1.5)
 		return
 
 	level_over = true
-	show_message("You Died on level %d" % GameState.level)
 	player.hide()
-	player.set_physics_process(false)
+	show_message("You Died on level %d" % GameState.level)
+	get_tree().paused = true
 	await get_tree().create_timer(2.0).timeout
+	get_tree().paused = false
 	GameState.reset_run()
 	get_tree().reload_current_scene()
 
 
-func _on_star_body_entered(body: Node) -> void:
-	if body == player and not level_over:
-		level_over = true
+func complete_level() -> void:
+	level_over = true
+	spawner.stop()
+	bullets.clear_all()
+	if boss:
+		boss.queue_free()
+	show_message("Boss survived!" if boss_level else "Level %d survived!" % GameState.level)
+	await get_tree().create_timer(1.0).timeout
+	if boss_level:
 		show_powerup_choice()
+	else:
+		GameState.level += 1
+		get_tree().reload_current_scene()
 
 
 func show_powerup_choice() -> void:
 	get_tree().paused = true
+	message_label.visible = false
 
 	var layer := CanvasLayer.new()
 	layer.layer = 10
@@ -109,18 +163,16 @@ func _on_powerup_chosen(id: String) -> void:
 	get_tree().reload_current_scene()
 
 
-func respawn_player() -> void:
-	player.global_position = start_position
-	player.velocity = Vector2.ZERO
-
-
 func update_hud() -> void:
-	level_label.text = "Level %d" % GameState.level
+	hearts.set_health(GameState.health, GameState.max_health())
+	level_label.text = "Level %d - BOSS" % GameState.level if boss_level else "Level %d" % GameState.level
 	var lines: Array[String] = []
 	for id in GameState.powerups:
 		var count := GameState.stacks(id)
 		var powerup_name: String = GameState.POWERUPS[id].name
 		lines.append(powerup_name if count == 1 else "%s x%d" % [powerup_name, count])
+	if GameState.stacks("shield") > 0:
+		lines.append("Shield charges: %d" % shield_charges)
 	powerups_label.text = "\n".join(lines)
 
 
